@@ -1,0 +1,8 @@
+node_modules
+.pi/todos
+git
+bin
+sessions
+auth.json
+settings.json
+graveyard

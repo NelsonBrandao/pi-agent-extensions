@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@linear/sdk": "^37.0.0"
+  }
+}
