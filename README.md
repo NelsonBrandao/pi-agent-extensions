@@ -14,6 +14,7 @@ Some of this is heavily inspired by (or straight up borrowed from) [mitsuhiko/ag
 
 - **linear** — CLI tools for interacting with Linear (list/create/update issues, projects, cycles, etc.). Uses `@linear/sdk`.
 - **github** — GitHub via the `gh` CLI.
+- **pr-review** — workflow for finding the PR on the current branch, reading review comments, addressing feedback, and replying. All `gh` CLI, no extra dependencies.
 
 ## Extensions
 
