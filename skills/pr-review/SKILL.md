@@ -17,18 +17,9 @@ When asked to address PR reviews, follow this sequence:
 gh pr view --json number,title,state,body,reviewDecision,headRefName,baseRefName,statusCheckRollup
 ```
 
-### 2. Read review comments
+### 2. Read unresolved review comments
 
-All comments with file, line, diff context, and comment ID (needed to reply):
-
-```bash
-gh api "repos/{owner}/{repo}/pulls/<number>/comments" --paginate --jq '
-  .[] |
-  "ID: \(.id)\nFile: \(.path):\(.line // .original_line // "?")\nAuthor: \(.user.login) (\(.created_at | split("T")[0]))\n\(.diff_hunk | split("\n") | .[-3:] | map("  │ \(.)") | join("\n"))\n💬 \(.body)\n"
-'
-```
-
-To see only unresolved threads, use GraphQL:
+Only fetch unresolved threads — ignore anything already resolved:
 
 ```bash
 gh api graphql -f query='
@@ -40,12 +31,13 @@ gh api graphql -f query='
             isResolved
             comments(first: 10) {
               nodes {
+                databaseId
                 author { login }
                 body
                 path
                 line
                 createdAt
-                databaseId
+                diffHunk
               }
             }
           }
@@ -53,7 +45,12 @@ gh api graphql -f query='
       }
     }
   }
-' -f owner="{owner}" -f repo="{repo}" -F pr=<number>
+' -f owner="{owner}" -f repo="{repo}" -F pr=<number> --jq '
+  .data.repository.pullRequest.reviewThreads.nodes[]
+  | select(.isResolved == false)
+  | .comments.nodes[]
+  | "ID: \(.databaseId)\nFile: \(.path):\(.line // "?")\nAuthor: \(.author.login) (\(.createdAt | split("T")[0]))\n\(.diffHunk | split("\n") | .[-3:] | map("  │ \(.)") | join("\n"))\n💬 \(.body)\n"
+'
 ```
 
 ### 3. Check changed files
