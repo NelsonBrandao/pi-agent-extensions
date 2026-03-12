@@ -81,8 +81,10 @@ gh api "repos/{owner}/{repo}/pulls/<number>/comments/<comment-id>/replies" -f bo
 
 ### 7. Commit and push
 
+Write a commit message that describes what actually changed, not just "address review feedback".
+
 ```bash
-git add -A && git commit -m "Address review feedback" && git push
+git add -A && git commit -m "Refactor auth middleware to validate tokens before routing" && git push
 ```
 
 ### 8. Verify CI
