@@ -4,5 +4,6 @@ git
 bin
 sessions
 auth.json
+models.json
 settings.json
 graveyard
