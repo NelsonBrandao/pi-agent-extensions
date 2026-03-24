@@ -28,7 +28,7 @@
 
 import type { ExtensionAPI, ExtensionContext, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 import { DynamicBorder, BorderedLoader } from "@mariozechner/pi-coding-agent";
-import { Container, fuzzyFilter, getEditorKeybindings, Input, type SelectItem, SelectList, Spacer, Text } from "@mariozechner/pi-tui";
+import { Container, fuzzyFilter, getKeybindings, Input, type SelectItem, SelectList, Spacer, Text } from "@mariozechner/pi-tui";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { existsSync } from "node:fs";
@@ -398,7 +398,10 @@ function extractFindings(messageText: string): ReviewFinding[] {
         .trim();
 
       // Strip leading/trailing bold markers
-      title = title.replace(/^\*\*\s*/, "").replace(/\s*\*\*$/, "").trim();
+      title = title
+        .replace(/^\*\*\s*/, "")
+        .replace(/\s*\*\*$/, "")
+        .trim();
 
       if (!title) title = `${priority} finding`;
 
@@ -469,10 +472,7 @@ function serializeReviewTodo(todo: TodoFileRecord): string {
   return `${frontMatter}\n\n${trimmedBody}\n`;
 }
 
-async function createTodosFromFindings(
-  findings: ReviewFinding[],
-  cwd: string,
-): Promise<{ created: number; todosDir: string }> {
+async function createTodosFromFindings(findings: ReviewFinding[], cwd: string): Promise<{ created: number; todosDir: string }> {
   const todosDir = getReviewTodosDir(cwd);
   await fs.mkdir(todosDir, { recursive: true });
 
@@ -1182,16 +1182,16 @@ export default function reviewExtension(pi: ExtensionAPI) {
           container.invalidate();
         },
         handleInput(data: string) {
-          const kb = getEditorKeybindings();
+          const kb = getKeybindings();
           if (
-            kb.matches(data, "selectUp") ||
-            kb.matches(data, "selectDown") ||
-            kb.matches(data, "selectConfirm") ||
-            kb.matches(data, "selectCancel")
+            kb.matches(data, "tui.select.up") ||
+            kb.matches(data, "tui.select.down") ||
+            kb.matches(data, "tui.select.confirm") ||
+            kb.matches(data, "tui.select.cancel")
           ) {
             if (selectList) {
               selectList.handleInput(data);
-            } else if (kb.matches(data, "selectCancel")) {
+            } else if (kb.matches(data, "tui.select.cancel")) {
               done(null);
             }
             tui.requestRender();
@@ -1287,16 +1287,16 @@ export default function reviewExtension(pi: ExtensionAPI) {
           container.invalidate();
         },
         handleInput(data: string) {
-          const kb = getEditorKeybindings();
+          const kb = getKeybindings();
           if (
-            kb.matches(data, "selectUp") ||
-            kb.matches(data, "selectDown") ||
-            kb.matches(data, "selectConfirm") ||
-            kb.matches(data, "selectCancel")
+            kb.matches(data, "tui.select.up") ||
+            kb.matches(data, "tui.select.down") ||
+            kb.matches(data, "tui.select.confirm") ||
+            kb.matches(data, "tui.select.cancel")
           ) {
             if (selectList) {
               selectList.handleInput(data);
-            } else if (kb.matches(data, "selectCancel")) {
+            } else if (kb.matches(data, "tui.select.cancel")) {
               done(null);
             }
             tui.requestRender();
@@ -1993,9 +1993,7 @@ Instructions:
     }
 
     // Show summary and confirm
-    const summary = findings
-      .map((f) => `[${f.priority}] ${f.title}`)
-      .join("\n");
+    const summary = findings.map((f) => `[${f.priority}] ${f.title}`).join("\n");
     const confirmed = await ctx.ui.confirm(
       `Create ${findings.length} todo(s)?`,
       `The following findings will be turned into todos:\n\n${summary}`,
@@ -2024,8 +2022,11 @@ Instructions:
 
       if (followUp && followUp !== "Stay in review") {
         const action: EndReviewAction =
-          followUp === "Return and fix findings" ? "returnAndFix" :
-          followUp === "Return and summarize" ? "returnAndSummarize" : "returnOnly";
+          followUp === "Return and fix findings"
+            ? "returnAndFix"
+            : followUp === "Return and summarize"
+              ? "returnAndSummarize"
+              : "returnOnly";
 
         await executeEndReviewAction(ctx, action, {
           showSummaryLoader: true,
@@ -2053,12 +2054,7 @@ Instructions:
 
     endReviewInProgress = true;
     try {
-      const choices = [
-        "Return only",
-        "Return and fix findings",
-        "Return and summarize",
-        "Create todos for findings",
-      ];
+      const choices = ["Return only", "Return and fix findings", "Return and summarize", "Create todos for findings"];
       const choice = await ctx.ui.select("Finish review:", choices);
 
       if (choice === undefined) {
