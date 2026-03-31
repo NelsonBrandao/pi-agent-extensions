@@ -25,3 +25,4 @@ Some of this is heavily inspired by (or straight up borrowed from) [mitsuhiko/ag
 - **notify** — sends a native terminal notification when pi is done thinking and waiting for you. Supports Ghostty, iTerm2, Kitty, WezTerm, and others.
 - **protected-paths** — blocks writes to paths you don't want touched (`.env`, `.git/`, `node_modules/`, etc.).
 - **whimsical** — replaces the boring "Thinking..." spinner with random silly messages like "Combobulating..." and "Flibbertigibbeting...".
+- **workspace** — lets pi work across multiple folders without opening it from a parent directory. Define workspace folders in `.pi/workspace.json`, then use `@folder/path` in file tools and `$WS_FOLDER` env vars in bash. Includes `/workspace` command for listing and reloading config.
