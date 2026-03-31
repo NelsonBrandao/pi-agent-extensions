@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { isToolCallEventType } from "@mariozechner/pi-coding-agent";
+import { basename } from "node:path";
 import { loadWorkspaceConfig, type WorkspaceConfig } from "./config";
 import {
   resolveWorkspacePath,
@@ -33,13 +34,20 @@ export default function (pi: ExtensionAPI) {
     }
   }
 
+  function updateStatus(workingDir: string, ctx: { ui: { setStatus: (id: string, text: string | undefined) => void } }) {
+    if (config && config.folders.length > 0) {
+      const cwdName = basename(workingDir);
+      const names = config.folders.map((f) => `@${f.name}`).join(", ");
+      ctx.ui.setStatus("workspace", `📁 . (${cwdName}), ${names}`);
+    } else {
+      ctx.ui.setStatus("workspace", undefined);
+    }
+  }
+
   // --- Session start: load config and set status ---
   pi.on("session_start", async (_event, ctx) => {
     reload(ctx.cwd, ctx.ui.notify.bind(ctx.ui));
-    if (config && config.folders.length > 0) {
-      const names = config.folders.map((f) => `@${f.name}`).join(", ");
-      ctx.ui.setStatus("workspace", `📁 ${names}`);
-    }
+    updateStatus(ctx.cwd, ctx);
   });
 
   // --- System prompt injection ---
@@ -85,12 +93,7 @@ export default function (pi: ExtensionAPI) {
 
       if (subcommand === "reload") {
         reload(ctx.cwd, ctx.ui.notify.bind(ctx.ui));
-        if (config && config.folders.length > 0) {
-          const names = config.folders.map((f) => `@${f.name}`).join(", ");
-          ctx.ui.setStatus("workspace", `📁 ${names}`);
-        } else {
-          ctx.ui.setStatus("workspace", undefined);
-        }
+        updateStatus(ctx.cwd, ctx);
         return;
       }
 
@@ -100,7 +103,11 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
+      const cwdName = basename(ctx.cwd);
       const lines = ["Workspace folders:", ""];
+      lines.push(`  ✓ . (${cwdName}) — current directory`);
+      lines.push(`      Path: ${ctx.cwd}`);
+      lines.push("");
       for (const folder of config.folders) {
         const status = folder.exists ? "✓" : "✗ NOT FOUND";
         lines.push(`  ${status} @${folder.name}`);
