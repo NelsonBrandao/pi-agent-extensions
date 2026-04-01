@@ -37,8 +37,8 @@ export default function (pi: ExtensionAPI) {
   function updateStatus(workingDir: string, ctx: { ui: { setStatus: (id: string, text: string | undefined) => void } }) {
     if (config && config.folders.length > 0) {
       const cwdName = basename(workingDir);
-      const names = config.folders.map((f) => `@${f.name}`).join(", ");
-      ctx.ui.setStatus("workspace", `📁 . (${cwdName}), ${names}`);
+      const names = config.folders.map((f) => `@${f.name}`).join(" ");
+      ctx.ui.setStatus("workspace", `📁 (${cwdName}) ${names}`);
     } else {
       ctx.ui.setStatus("workspace", undefined);
     }
@@ -105,7 +105,7 @@ export default function (pi: ExtensionAPI) {
 
       const cwdName = basename(ctx.cwd);
       const lines = ["Workspace folders:", ""];
-      lines.push(`  ✓ . (${cwdName}) — current directory`);
+      lines.push(`  ✓ (${cwdName}) — current directory`);
       lines.push(`      Path: ${ctx.cwd}`);
       lines.push("");
       for (const folder of config.folders) {
