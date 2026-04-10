@@ -1653,7 +1653,7 @@ export default function reviewExtension(pi: ExtensionAPI) {
     const projectGuidelines = await loadProjectReviewGuidelines(ctx.cwd);
 
     // Combine the review rubric with the specific prompt
-    let fullPrompt = `${REVIEW_RUBRIC}\n\n---\n\nPlease perform a code review with the following focus:\n\n${prompt}`;
+    let fullPrompt = `${REVIEW_RUBRIC}\n\n---\n\nBefore starting the review, check the current git branch name for a Linear ticket ID (e.g. ENG-123, PROJ-456). If you find one, look up the ticket in Linear using the linear skill to understand the context and requirements. If there is no ticket ID in the branch name, skip this step and proceed directly to the review.\n\n---\n\nPlease perform a code review with the following focus:\n\n${prompt}`;
 
     if (reviewCustomInstructions) {
       fullPrompt += `\n\nShared custom review instructions (applies to all reviews):\n\n${reviewCustomInstructions}`;
