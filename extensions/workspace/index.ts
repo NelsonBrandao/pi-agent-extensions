@@ -6,14 +6,18 @@ import {
   resolveWorkspacePath,
   buildBashExports,
   buildSystemPromptSection,
+  discoverFolderResources,
+  type FolderResources,
 } from "./resolver";
 
 export default function (pi: ExtensionAPI) {
   let config: WorkspaceConfig | null = null;
+  let folderResources: FolderResources[] = [];
   let cwd: string = "";
 
   function reload(workingDir: string, notify?: (msg: string, level: "info" | "warning" | "error") => void) {
     cwd = workingDir;
+    folderResources = [];
     try {
       config = loadWorkspaceConfig(cwd);
       if (config) {
@@ -27,9 +31,23 @@ export default function (pi: ExtensionAPI) {
         } else {
           notify?.(`Workspace: ${count} folder(s) loaded`, "info");
         }
+        // Discover skills/prompts in workspace folders
+        folderResources = discoverFolderResources(config.folders);
+        if (folderResources.length > 0) {
+          const resourceSummary = folderResources
+            .map((r) => {
+              const parts: string[] = [];
+              if (r.skillPaths.length > 0) parts.push(`${r.skillPaths.length} skill dir(s)`);
+              if (r.promptPaths.length > 0) parts.push(`${r.promptPaths.length} prompt dir(s)`);
+              return `@${r.folderName}: ${parts.join(", ")}`;
+            })
+            .join("; ");
+          notify?.(`Workspace resources: ${resourceSummary}`, "info");
+        }
       }
     } catch (err) {
       config = null;
+      folderResources = [];
       notify?.(`Workspace error: ${(err as Error).message}`, "error");
     }
   }
@@ -50,12 +68,24 @@ export default function (pi: ExtensionAPI) {
     updateStatus(ctx.cwd, ctx);
   });
 
+  // --- Resource discovery: register skills/prompts from workspace folders ---
+  pi.on("resources_discover", async (_event, _ctx) => {
+    if (!config || folderResources.length === 0) return;
+
+    const skillPaths = folderResources.flatMap((r) => r.skillPaths);
+    const promptPaths = folderResources.flatMap((r) => r.promptPaths);
+
+    if (skillPaths.length === 0 && promptPaths.length === 0) return;
+
+    return { skillPaths, promptPaths };
+  });
+
   // --- System prompt injection ---
   pi.on("before_agent_start", async (event, _ctx) => {
     if (!config || config.folders.length === 0) return;
 
     return {
-      systemPrompt: event.systemPrompt + buildSystemPromptSection(config.folders),
+      systemPrompt: event.systemPrompt + buildSystemPromptSection(config.folders, folderResources),
     };
   });
 
